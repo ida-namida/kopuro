@@ -41,6 +41,25 @@ func (j JsonFileService) ReadJSONFile(filename string) ([]byte, error) {
 	return b, nil
 }
 
+func (j JsonFileService) CheckJSONFileExistence(filename string) ([]byte, error) {
+	f, err := os.Open(j.makeFilePath(filename))
+	defer f.Close()
+
+	fileExists := true
+	if os.IsNotExist(err) {
+		fileExists = false
+	} else if err != nil {
+		return nil, err
+	}
+
+	b, err := json.Marshal(map[string]interface{}{ "file_exists": fileExists })
+	if err != nil {
+		return nil, err
+	}
+
+	return b, nil
+}
+
 func (j JsonFileService) makeFilePath(filename string) string {
 	return j.baseFilePath + "/" + filename + ".json"
 }

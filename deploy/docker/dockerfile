@@ -1,0 +1,15 @@
+FROM golang:1.17 AS builder
+RUN mkdir -p /kopuro
+COPY . /kopuro
+RUN cd /kopuro && CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o kopuro ./cmd/main.go
+
+FROM alpine:latest
+RUN apk --no-cache add ca-certificates
+WORKDIR /root
+COPY --from=builder ./kopuro/kopuro .
+ARG PORT
+ENV PORT=${PORT}
+ARG BASE_FILE_PATH
+ENV BASE_FILE_PATH=${BASE_FILE_PATH}
+RUN mkdir -p $BASE_FILE_PATH
+ENTRYPOINT ["/root/kopuro"]

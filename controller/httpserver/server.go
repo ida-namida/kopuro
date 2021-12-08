@@ -23,6 +23,7 @@ func (s Server) Start() {
 	router := httprouter.New()
 	router.POST("/json/write", s.writeJSONFile)
 	router.GET("/json/read", s.readJSONFile)
+	router.GET("/json/check", s.checkJSONFileExistence)
 
 	http.ListenAndServe(":" + s.httpPort, router)
 }
@@ -76,6 +77,33 @@ func (s Server) readJSONFile(w http.ResponseWriter, r *http.Request, _ httproute
 	}
 
 	res, err := s.jsonFileService.ReadJSONFile(filename)
+	if err != nil {
+		w.Header().Add("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(fmt.Sprintf(`{
+			"error": "%s"
+		}`, err.Error())))
+		return
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(res)
+}
+
+func (s Server) checkJSONFileExistence(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	filename := r.URL.Query().Get("filename")
+
+	if len(filename) <= 0 {
+		w.Header().Add("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(`{
+			"error": "Filename cannot be empty"
+		}`))
+		return
+	}
+
+	res, err := s.jsonFileService.CheckJSONFileExistence(filename)
 	if err != nil {
 		w.Header().Add("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
